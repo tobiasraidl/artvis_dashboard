@@ -1,4 +1,4 @@
-from dash import Dash, dcc, html
+from dash import Dash, dcc, html, callback
 from dash.dependencies import Input, Output
 import dash_bootstrap_components as dbc
 import plotly.express as px
@@ -6,10 +6,6 @@ import dash
 import pandas as pd
 
 dash.register_page(__name__, path='/')
-
-# layout = dbc.Container([
-#     html.H3("Test Exhibition Page")
-# ])
 
 # TODO: create a new csv that is transformed using the following code patch and just load it here (more efficient)
 df = pd.read_csv('data/artvis.csv', sep=';')
@@ -23,28 +19,26 @@ location_counts = df.groupby(['e.latitude', 'e.longitude']).size().reset_index(n
 fig = px.scatter_mapbox(
     location_counts, lat="e.latitude", lon="e.longitude", 
     size="count",
-    zoom=4, height=600,
+    zoom=4, height=700,
     mapbox_style="carto-positron",
 )
 
-app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-
-layout = dbc.Container([
-    html.H1("ArtVis Map Visualization"),
+layout = html.Div([
+    # html.H3("ArtVis Map Visualization"),
     dbc.Row([
         dbc.Col([
             dcc.Graph(
                 id='map',
-                figure=fig
+                figure=fig,
             ),
-        ], width=6),
+        ], width=7),
         dbc.Col([
-            dbc.Card(id='info-card', style={'height': '100%'})  
-        ], width=6)
-    ])
+            dbc.Card(id='info-card', style={"height": "700px", "overflowY": "auto"})  
+        ], width=5)
+    ], style={"height": "700"})
 ], className='m-3')
  
-@app.callback(
+@callback(
     Output('info-card', 'children'),
     Input('map', 'clickData'),
 )
@@ -93,6 +87,3 @@ def display_info(clickData):
     ]
     
     return card_content
-
-if __name__ == '__main__':
-    app.run_server(debug=True)

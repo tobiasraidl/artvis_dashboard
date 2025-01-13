@@ -1,12 +1,12 @@
 import dash_bootstrap_components as dbc
-from dash import html, dcc, callback
-from dash.dependencies import Input, Output, State
+from dash import html, callback
+from dash.dependencies import Input, Output
 
 def Navbar():
     navbar = dbc.Navbar(
         dbc.Container(
             [
-                dbc.NavbarBrand("Election Dashboard", href="#"),
+                dbc.NavbarBrand("ArtVis Dashboard", href="#"),
 
                 dbc.Nav(
                     [
