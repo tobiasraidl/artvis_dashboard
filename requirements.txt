@@ -2,3 +2,4 @@ pandas
 numpy
 dash
 dash-bootstrap-components
+gunicorn
