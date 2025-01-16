@@ -20,21 +20,21 @@ data = df.groupby(['a.birthplace', 'a.deathplace']).size().reset_index(name='cou
 data = data.sort_values(by = "count", ascending = False)
 print(data)
 
-location_counts = df.groupby(['a.birthplace', 'a.deathplace']).size().reset_index(name='count')
+location_counts = df.groupby(['e.latitude', 'e.longitude']).size().reset_index(name='count')
 
-# fig = px.scatter_mapbox(
-#     location_counts, lat="e.latitude", lon="e.longitude", 
-#     size="count",
-#     zoom=4, height=700,
-#     mapbox_style="carto-positron",
-# )
-
-fig = px.line_map(
-    location_counts,
-    lat = "e.latitude",
-    lon = "e.longitude",
-    width = "count"
+fig = px.scatter_mapbox(
+     location_counts, lat="e.latitude", lon="e.longitude", 
+     size="count",
+     zoom=4, height=700,
+     mapbox_style="carto-positron",
 )
+
+# fig = px.line_map(
+#     location_counts,
+#     lat = "e.latitude",
+#     lon = "e.longitude",
+#    width = "count"
+# )
 
 layout = html.Div([
     # html.H3("ArtVis Map Visualization"),

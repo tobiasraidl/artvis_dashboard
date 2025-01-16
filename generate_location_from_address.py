@@ -36,5 +36,8 @@ for i, (index, row) in enumerate(df.iterrows()):
 
     df.at[index, 'deathLon'] = death_location["lon"] if death_location else None
     df.at[index, 'deathLat'] = death_location["lat"] if death_location else None
+    
+    if i == 100:
+        break
 
 df.to_csv("data/artvis_processed.csv", index=False)
