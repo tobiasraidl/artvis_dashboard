@@ -1,7 +1,10 @@
-from geopy.geocoders import Nominatim
+import googlemaps
 import pandas as pd
+import csv
+import time
 
-app = Nominatim(user_agent="tutorial")
+# Initialize Google Maps client
+gmaps = googlemaps.Client(key='ASK_ALEX_FOR_API_KEY')
 
 df = pd.read_csv('data/artvis.csv', sep=';')
 df[['e.latitude', 'e.longitude']] = df[['e.latitude', 'e.longitude']].apply(pd.to_numeric, errors='coerce')
@@ -11,33 +14,36 @@ df[['e.latitude', 'e.longitude']] = df[['e.latitude', 'e.longitude']].astype(flo
 df = df[df["a.birthplace"] != df["a.deathplace"]]
 df = df[(df["a.birthplace"] != "\\N") & (df["a.deathplace"] != "\\N")]
 
+unique_places = set(df["a.birthplace"]) | set(df["a.deathplace"])
+
 cache = {}
-for i, (index, row) in enumerate(df.iterrows()):
+i = 1
+for place in unique_places:
+    print(f"Row: {i}")
+    try:
+        geocode_result = gmaps.geocode(place)
+        cache[place] = geocode_result[0]['geometry']['location'] if geocode_result else None
+    except Exception as e:
+        print(f"Error geocoding {place}: {e}")
+        with open("data/location_cache.csv", "w", newline="") as f:
+            w = csv.DictWriter(f, cache.keys())
+            w.writeheader()
+            w.writerow(cache)
+    i += 1
+    time.sleep(0.1)  # To avoid hitting the rate limit
+
+for index, row in df.iterrows():
     # Process birthplace
     birthplace = row['a.birthplace']
-    if birthplace in cache:
-        birth_location = cache[birthplace]
-    else:
-        location = app.geocode(birthplace)
-        birth_location = location.raw if location else None
-        cache[birthplace] = birth_location
-
-    df.at[index, 'birthLon'] = birth_location["lon"] if birth_location else None
-    df.at[index, 'birthLat'] = birth_location["lat"] if birth_location else None
+    birth_location = cache.get(birthplace)
+    df.at[index, 'birthLon'] = birth_location['lng'] if birth_location else None
+    df.at[index, 'birthLat'] = birth_location['lat'] if birth_location else None
 
     # Process deathplace
     deathplace = row['a.deathplace']
-    if deathplace in cache:
-        death_location = cache[deathplace]
-    else:
-        location = app.geocode(deathplace)
-        death_location = location.raw if location else None
-        cache[deathplace] = death_location
-
-    df.at[index, 'deathLon'] = death_location["lon"] if death_location else None
-    df.at[index, 'deathLat'] = death_location["lat"] if death_location else None
-    
-    if i == 100:
-        break
+    death_location = cache.get(deathplace)
+    df.at[index, 'deathLon'] = death_location['lng'] if death_location else None
+    df.at[index, 'deathLat'] = death_location['lat'] if death_location else None
 
 df.to_csv("data/artvis_processed.csv", index=False)
+print("Geocoding completed and data saved.")

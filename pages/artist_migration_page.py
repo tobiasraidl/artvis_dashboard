@@ -9,7 +9,7 @@ import plotly.graph_objects as go
 dash.register_page(__name__, path='/artist-migration')
 
 # TODO: create a new csv that is transformed using the following code patch and just load it here (more efficient)
-df = pd.read_csv('data/artvis_processed.csv')
+df = pd.read_csv('data/migration.csv')
 df = df.dropna(subset=['birthLon', 'birthLat', 'deathLon', 'deathLat'])
 # print(df.info())
 # df[['birthLon', 'birthLat', 'deathLon', 'deathLat']] = df[['birthLon', 'birthLat', 'deathLon', 'deathLat']].apply(pd.to_numeric, errors='coerce')
@@ -28,12 +28,11 @@ def create_figure():
     fig = go.Figure()
 
     for index, row in data.iterrows():
-        print(index)
         fig.add_trace(go.Scattergeo(
             lon = [row["birthLon"], row["deathLon"]],
             lat = [row["deathLat"], row["deathLat"]],
             mode = 'lines',
-            line = dict(width = 2, color = 'red'),
+            line = dict(width = row["count"], color="blue"),
             name = f"{row['a.birthplace']} to {row['a.deathplace']}"
         ))
 
@@ -45,7 +44,9 @@ def create_figure():
             showland = True,
             landcolor = 'rgb(243, 243, 243)',
             countrycolor = 'rgb(204, 204, 204)',
-        )
+        ),
+        width=1000,
+        height=500,
     )
     
     return fig
