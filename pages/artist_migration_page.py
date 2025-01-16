@@ -18,7 +18,6 @@ df = df[df["a.birthplace"] != df["a.deathplace"]]
 df = df[(df["a.birthplace"] != "\\N") & (df["a.deathplace"] != "\\N")]
 data = df.groupby(['a.birthplace', 'a.deathplace']).size().reset_index(name='count')
 data = data.sort_values(by = "count", ascending = False)
-print(data)
 
 location_counts = df.groupby(['e.latitude', 'e.longitude']).size().reset_index(name='count')
 
