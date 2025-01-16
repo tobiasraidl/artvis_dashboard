@@ -56,10 +56,10 @@ layout = html.Div([
     # html.H3("ArtVis Map Visualization"),
     dbc.Row([
             html.Label('Set the year an artist needs to have been alive to be displayed:'),
-            dcc.Slider(1700, 2000, 25, value=1700, id='slider', marks={year: str(year) for year in range(1700, 2001, 25)}),
+            dcc.Slider(1700, 2000, 25, value=1825, id='slider', marks={year: str(year) for year in range(1700, 2001, 25)}),
             dbc.Spinner(dcc.Graph(
                 id='map',
-                figure=create_figure(artist_migration_grouped_with_counts),
+                figure={},
             )),
     ], style={"height": "700"}, className="justify-content-center")
 ], className='m-3')
