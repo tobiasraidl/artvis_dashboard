@@ -9,41 +9,36 @@ import plotly.graph_objects as go
 dash.register_page(__name__, path='/artist-migration')
 
 # TODO: create a new csv that is transformed using the following code patch and just load it here (more efficient)
-df = pd.read_csv('data/artvis.csv', sep=';')
-df[['e.latitude', 'e.longitude']] = df[['e.latitude', 'e.longitude']].apply(pd.to_numeric, errors='coerce')
-df = df.dropna(subset=['e.latitude', 'e.longitude', 'e.startdate'])
-df = df[df['e.city'] != '-']
-df[['e.latitude', 'e.longitude']] = df[['e.latitude', 'e.longitude']].astype(float)
+df = pd.read_csv('data/artvis_processed.csv')
+df = df.dropna(subset=['birthLon', 'birthLat', 'deathLon', 'deathLat'])
+# print(df.info())
+# df[['birthLon', 'birthLat', 'deathLon', 'deathLat']] = df[['birthLon', 'birthLat', 'deathLon', 'deathLat']].apply(pd.to_numeric, errors='coerce')
 
-df = df[df["a.birthplace"] != df["a.deathplace"]]
-df = df[(df["a.birthplace"] != "\\N") & (df["a.deathplace"] != "\\N")]
-data = df.groupby(['a.birthplace', 'a.deathplace']).size().reset_index(name='count')
-data = data.sort_values(by = "count", ascending = False)
-print(data)
+# df = df[df["a.birthplace"] != df["a.deathplace"]]
+# df = df[(df["a.birthplace"] != "\\N") & (df["a.deathplace"] != "\\N")]
+df_one_row_per_artist =  df.drop_duplicates(subset=['a.id'])
+df_grouped_by_death_birth_places = df_one_row_per_artist.groupby(['a.birthplace', 'a.deathplace', 'birthLon', 'birthLat', 'deathLon', 'deathLat']).size().reset_index(name='count')
+data = df_grouped_by_death_birth_places.sort_values(by = "count", ascending = False)
 
-location_counts = df.groupby(['a.birthplace', 'a.deathplace']).size().reset_index(name='count')
+# print(data)
 
-# Define the coordinates for the arrows
-arrows = [
-    {"start": (16.3738, 48.2082), "end": (-0.1276, 51.5074), "name": "Vienna to London"},
-    {"start": (-74.0060, 40.7128), "end": (139.6917, 35.6895), "name": "NYC to Tokyo"}
-]
 
 # Create the figure
 def create_figure():
     fig = go.Figure()
 
-    for arrow in arrows:
+    for index, row in data.iterrows():
+        print(index)
         fig.add_trace(go.Scattergeo(
-            lon = [arrow["start"][0], arrow["end"][0]],
-            lat = [arrow["start"][1], arrow["end"][1]],
+            lon = [row["birthLon"], row["deathLon"]],
+            lat = [row["deathLat"], row["deathLat"]],
             mode = 'lines',
             line = dict(width = 2, color = 'red'),
-            name = arrow["name"]
+            name = f"{row['a.birthplace']} to {row['a.deathplace']}"
         ))
 
     fig.update_layout(
-        title_text = 'World Map with Arrows',
+        # title_text = 'World Map with Arrows',
         showlegend = False,
         geo = dict(
             projection_type = 'natural earth',
@@ -70,52 +65,3 @@ layout = html.Div([
     ], style={"height": "700"})
 ], className='m-3')
  
-@callback(
-    Output('info-card-2', 'children'),
-    Input('map', 'clickData'),
-)
-def display_info(clickData):
-    if clickData is None:
-        return dbc.CardBody("Click on a marker for more information about the location.")
-
-    lat = clickData['points'][0]['lat']
-    lon = clickData['points'][0]['lon']
-    
-    filtered_df = df[(df['e.latitude'] == lat) & (df['e.longitude'] == lon)]
-    num_artists = filtered_df.shape[0]
-    city = filtered_df['e.city'].iloc[0]
-
-    yearly_counts = filtered_df.groupby('e.startdate').size().reset_index(name='row_count')
-
-    timeline_fig = px.line(yearly_counts, x='e.startdate', y='row_count', markers=True,
-                  title=f'Number of artists that exhibited in {city} by year.',
-                  labels={'e.startdate': 'Year', 'row_count': 'Artists'})
-    timeline_fig.update_layout(xaxis=dict(dtick=1))
-    
-    venue_counts = filtered_df['e.venue'].value_counts().nlargest(5).reset_index()
-    venue_counts.columns = ['Venue', 'Occurrences']  # Rename columns for clarity
-    venue_counts = venue_counts.sort_values(by='Occurrences', ascending=True)
-    top_venues_fig = px.bar(
-        venue_counts,
-        x='Occurrences',
-        y='Venue',
-        title='Top 10 Venues by number of Artists hosted',
-        labels={'Occurrences': 'Num Artists hosted', 'Venue': 'Venue'},
-        orientation='h'
-    )
-
-    top_venues_fig.update_layout(
-        xaxis_title='Num Artists hosted',
-        yaxis_title='Venue',
-    )
-
-    card_content = [
-        dbc.CardHeader(city),
-        dbc.CardBody([
-            html.P(f"In total, {num_artists} exhibited in {city}"),
-            dcc.Graph(figure=timeline_fig),
-            dcc.Graph(figure=top_venues_fig)
-        ])
-    ]
-    
-    return card_content
