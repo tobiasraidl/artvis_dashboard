@@ -4,6 +4,7 @@ import dash_bootstrap_components as dbc
 import plotly.express as px
 import dash
 import pandas as pd
+import plotly.graph_objects as go
 
 dash.register_page(__name__, path='/artist-migration')
 
@@ -20,21 +21,39 @@ data = df.groupby(['a.birthplace', 'a.deathplace']).size().reset_index(name='cou
 data = data.sort_values(by = "count", ascending = False)
 print(data)
 
-location_counts = df.groupby(['e.latitude', 'e.longitude']).size().reset_index(name='count')
+location_counts = df.groupby(['a.birthplace', 'a.deathplace']).size().reset_index(name='count')
 
-fig = px.scatter_mapbox(
-     location_counts, lat="e.latitude", lon="e.longitude", 
-     size="count",
-     zoom=4, height=700,
-     mapbox_style="carto-positron",
-)
+# Define the coordinates for the arrows
+arrows = [
+    {"start": (16.3738, 48.2082), "end": (-0.1276, 51.5074), "name": "Vienna to London"},
+    {"start": (-74.0060, 40.7128), "end": (139.6917, 35.6895), "name": "NYC to Tokyo"}
+]
 
-# fig = px.line_map(
-#     location_counts,
-#     lat = "e.latitude",
-#     lon = "e.longitude",
-#    width = "count"
-# )
+# Create the figure
+def create_figure():
+    fig = go.Figure()
+
+    for arrow in arrows:
+        fig.add_trace(go.Scattergeo(
+            lon = [arrow["start"][0], arrow["end"][0]],
+            lat = [arrow["start"][1], arrow["end"][1]],
+            mode = 'lines',
+            line = dict(width = 2, color = 'red'),
+            name = arrow["name"]
+        ))
+
+    fig.update_layout(
+        title_text = 'World Map with Arrows',
+        showlegend = False,
+        geo = dict(
+            projection_type = 'natural earth',
+            showland = True,
+            landcolor = 'rgb(243, 243, 243)',
+            countrycolor = 'rgb(204, 204, 204)',
+        )
+    )
+    
+    return fig
 
 layout = html.Div([
     # html.H3("ArtVis Map Visualization"),
@@ -42,7 +61,7 @@ layout = html.Div([
         dbc.Col([
             dcc.Graph(
                 id='map',
-                figure=fig,
+                figure=create_figure(),
             ),
         ], width=7),
         dbc.Col([
