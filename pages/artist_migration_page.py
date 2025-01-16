@@ -17,14 +17,15 @@ df = df.dropna(subset=['birthLon', 'birthLat', 'deathLon', 'deathLat'])
 # df = df[df["a.birthplace"] != df["a.deathplace"]]
 # df = df[(df["a.birthplace"] != "\\N") & (df["a.deathplace"] != "\\N")]
 df_one_row_per_artist =  df.drop_duplicates(subset=['a.id'])
+# print(df_one_row_per_artist)
 df_grouped_by_death_birth_places = df_one_row_per_artist.groupby(['a.birthplace', 'a.deathplace', 'birthLon', 'birthLat', 'deathLon', 'deathLat']).size().reset_index(name='count')
-data = df_grouped_by_death_birth_places.sort_values(by = "count", ascending = False)
+artist_migration_grouped_with_counts = df_grouped_by_death_birth_places.sort_values(by = "count", ascending = False)
 
 # print(data)
 
 
 # Create the figure
-def create_figure():
+def create_figure(data):
     fig = go.Figure()
 
     for index, row in data.iterrows():
@@ -55,10 +56,12 @@ layout = html.Div([
     # html.H3("ArtVis Map Visualization"),
     dbc.Row([
         dbc.Col([
-            dcc.Graph(
+            html.Label('Set the year an artist needs to have been alive to be displayed:'),
+            dcc.Slider(1700, 2000, 10, value=1700, id='slider', marks={year: str(year) for year in range(1700, 2001, 10)}),
+            dbc.Spinner(dcc.Graph(
                 id='map',
-                figure=create_figure(),
-            ),
+                figure=create_figure(artist_migration_grouped_with_counts),
+            )),
         ], width=7),
         dbc.Col([
             dbc.Card(id='info-card-2', style={"height": "700px", "overflowY": "auto"})  
@@ -66,3 +69,16 @@ layout = html.Div([
     ], style={"height": "700"})
 ], className='m-3')
  
+ 
+@callback(
+    Output('map', 'figure'),
+    Input('slider', 'value'))
+def update_output(value):
+    filtered_df = df_one_row_per_artist[(df_one_row_per_artist['birthyear'] <= value) & 
+                 ((df_one_row_per_artist['deathyear'].isna()) | (df_one_row_per_artist['deathyear'] >= value))]
+    
+    filtered_grouped_df = filtered_df.groupby(['a.birthplace', 'a.deathplace', 'birthLon', 'birthLat', 'deathLon', 'deathLat']).size().reset_index(name='count')
+    # artist_migration_grouped_with_counts = filtered_grouped_df.sort_values(by = "count", ascending = False)
+    
+    fig = create_figure(filtered_grouped_df)
+    return fig
