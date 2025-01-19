@@ -33,8 +33,23 @@ def create_figure(data):
             lon = [row["birthLon"], row["deathLon"]],
             lat = [row["birthLat"], row["deathLat"]],
             mode = 'lines',
-            line = dict(width = row["count"], color="blue"),
-            name = f"{row['a.birthplace']} to {row['a.deathplace']}"
+            line = dict(width = row["count"] * 3, color = '#354a6e'),
+            opacity = 0.3,
+            text = f"{row['a.birthplace']} to {row['a.deathplace']}",
+            hoverinfo="text"
+        ))
+
+        fig.add_trace(go.Scattergeo(
+            lon=[row["deathLon"]],
+            lat=[row["deathLat"]],
+            mode='markers',
+            marker=dict(
+                size=7, 
+                color='#3dba4b',
+                opacity=0.8,
+                symbol='circle'
+            ),
+            hoverinfo="skip"
         ))
 
     fig.update_layout(
