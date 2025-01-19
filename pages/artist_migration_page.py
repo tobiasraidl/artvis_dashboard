@@ -31,7 +31,7 @@ def create_figure(data):
     for index, row in data.iterrows():
         fig.add_trace(go.Scattergeo(
             lon = [row["birthLon"], row["deathLon"]],
-            lat = [row["deathLat"], row["deathLat"]],
+            lat = [row["birthLat"], row["deathLat"]],
             mode = 'lines',
             line = dict(width = row["count"], color="blue"),
             name = f"{row['a.birthplace']} to {row['a.deathplace']}"
